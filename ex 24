@@ -1,0 +1,38 @@
+def permute(block, table):
+    return [block[i-1] for i in table]
+
+
+def left_shift(bits, shift):
+    return bits[shift:] + bits[:shift]
+
+
+def generate_keys(key):
+    key = permute(key, PC1)
+    left, right = key[:28], key[28:]
+    round_keys = []
+    for shift in SHIFT_SCHEDULE:
+        left, right = left_shift(left, shift), left_shift(right, shift)
+        round_keys.append(permute(left + right, PC2))
+    return round_keys[::-1]  
+
+
+def feistel(right, key):
+    return [r ^ k for r, k in zip(right, key)] 
+
+def des_decrypt(ciphertext, key):
+    ciphertext = permute(ciphertext, IP)
+    left, right = ciphertext[:32], ciphertext[32:]
+    keys = generate_keys(key)  
+
+    for i in range(16):
+        new_right = [l ^ f for l, f in zip(left, feistel(right, keys[i]))]
+        left, right = right, new_right
+
+    return permute(right + left, FP)
+
+
+ciphertext = [0, 1, 1, 0, 1, 0, 0, 1] * 8  
+key = [1, 0, 1, 0, 0, 1, 1, 1] * 8  
+
+plaintext = des_decrypt(ciphertext, key)
+print("Decrypted:", plaintext)
