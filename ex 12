@@ -1,0 +1,91 @@
+def pmt(x, t):
+    s = ''
+    for i in t:
+        s = s + x[i-1]
+    return s
+
+def sft(x, n):
+    return x[n:] + x[:n]
+
+def gk(k):
+    k = pmt(k, pcone)
+    l = k[0:28]
+    r = k[28:]
+    ks = []
+    for n in shifts:
+        l = sft(l, n)
+        r = sft(r, n)
+        sk = l[0:24] + r[0:24]
+        ks.append(sk)
+    return ks
+
+def ff(r, k):
+    x = pmt(r, e)
+    x = int(x, 2) ^ int(k, 2)
+    x = bin(x)[2:].zfill(48)
+    return pmt(x, p)
+
+def enc(pt, k):
+    pt = pmt(pt, ip)
+    l = pt[0:32]
+    r = pt[32:]
+    ks = gk(k)
+    for sk in ks:
+        t = r
+        r = bin(int(l,2) ^ int(ff(r, sk),2))[2:].zfill(32)
+        l = t
+    ct = pmt(r + l, fip)
+    return ct
+
+def dec(ct, k):
+    ct = pmt(ct, ip)
+    l = ct[0:32]
+    r = ct[32:]
+    ks = gk(k)
+    ks = ks[::-1]
+    for sk in ks:
+        t = r
+        r = bin(int(l,2) ^ int(ff(r, sk),2))[2:].zfill(32)
+        l = t
+    pt = pmt(r + l, fip)
+    return pt
+
+def tde(pt, k1, k2, k3):
+    t = enc(pt, k3)
+    t = dec(t, k2)
+    ct = enc(t, k1)
+    return ct
+
+def xor(a, b):
+    s = ''
+    for i in range(len(a)):
+        if a[i] == b[i]:
+            s = s + '0'
+        else:
+            s = s + '1'
+    return s
+
+def tdescbc(txt, iv, k1, k2, k3):
+    n = 64
+    ct = ''
+    prev = iv
+    for i in range(0, len(txt), n):
+        blk = txt[i:i+n]
+        blk = xor(blk, prev)
+        cblk = tde(blk, k1, k2, k3)
+        ct = ct + cblk
+        prev = cblk
+    return ct
+
+pt = ("0000000100100011010001010110011110001001101010111100110111101111" +
+      "1111000011110000111100001111000011110000111100001111000011110000")
+iv = "1010101010101010101010101010101010101010101010101010101010101010"
+k1 = "0001001100110100010101110111100110011011101111001101111111110001"
+k2 = "0101010101010101010101010101010101010101010101010101010101010101"
+k3 = "0011001100110011001100110011001100110011001100110011001100110011"
+
+ct = tdescbc(pt, iv, k1, k2, k3)
+print("encrypted:", ct)
+print("for security: triple des")
+print("for performance: des")
+
