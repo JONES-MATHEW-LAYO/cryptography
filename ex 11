@@ -1,0 +1,54 @@
+def permute(x, t):
+    return ''.join(x[i-1] for i in t)
+
+def shift(x, s):
+    return x[s:] + x[:s]
+
+def gkey(k):
+    k = permute(k, pcone)
+    l = k[:28]
+    r = k[28:]
+    ks = []
+    for s in shifts:
+        l = shift(l, s)
+        r = shift(r, s)
+        sk = l[:24] + r[:24]
+        ks.append(sk)
+    return ks
+
+def f(r, k):
+    x = permute(r, e)
+    x = int(x, 2) ^ int(k, 2)
+    x = bin(x)[2:].zfill(48)
+    return permute(x, p)
+
+def enc(pt, k):
+    pt = permute(pt, ip)
+    l = pt[:32]
+    r = pt[32:]
+    ks = gkey(k)
+    for sk in ks:
+        temp = r
+        r = bin(int(l,2) ^ int(f(r, sk),2))[2:].zfill(32)
+        l = temp
+    ct = permute(r + l, fip)
+    return ct
+
+def dec(ct, k):
+    ct = permute(ct, ip)
+    l = ct[:32]
+    r = ct[32:]
+    ks = gkey(k)[::-1]
+    for sk in ks:
+        temp = r
+        r = bin(int(l,2) ^ int(f(r, sk),2))[2:].zfill(32)
+        l = temp
+    pt = permute(r + l, fip)
+    return pt
+
+pt = "0000000100100011010001010110011110001001101010111100110111101111"
+k = "0001001100110100010101110111100110011011101111001101111111110001"
+
+ct = enc(pt, k)
+print("encrypted:", ct)
+print("decrypted:", dec(ct, k))
